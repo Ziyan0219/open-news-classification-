@@ -1,76 +1,116 @@
-import React from 'react';
-import { ExternalLink, MapPin, Building, Home } from 'lucide-react';
+import React, { useState } from 'react';
+import { ExternalLink, MapPin, Building, Home, ChevronDown, ChevronUp } from 'lucide-react';
 
 const StoryCard = ({ story }) => {
-  const getHostname = (url) => {
+  const [showAllNeighborhoods, setShowAllNeighborhoods] = useState(false);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null;
     try {
-      return new URL(url).hostname;
+      const date = new Date(dateString);
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
     } catch {
-      return url;
+      return dateString;
     }
   };
 
+  const formatAuthor = (authorString) => {
+    if (!authorString) return null;
+    // Clean up author string (remove "by" prefix if present)
+    return authorString.replace(/^by\s*/i, '').trim();
+  };
+
+  const neighborhoods = story.neighborhoods ? story.neighborhoods.split(',').map(n => n.trim()) : [];
+  const visibleNeighborhoods = showAllNeighborhoods ? neighborhoods : neighborhoods.slice(0, 2);
+  const hasMoreNeighborhoods = neighborhoods.length > 2;
+
   return (
     <div className="news-card p-6 h-full flex flex-col">
-      {/* Story Link */}
+      {/* Article Title, Author, and Date */}
       <div className="mb-4">
-        <a
-          href={story.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="news-link text-lg font-semibold hover:text-blue-800 transition-colors duration-200 flex items-start gap-2"
-        >
-          <span className="flex-1">{getHostname(story.url)}</span>
-          <ExternalLink className="h-4 w-4 mt-1 flex-shrink-0" />
-        </a>
+        {story.title && (
+          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 leading-tight">
+            {story.title}
+          </h3>
+        )}
+        
+        <div className="flex flex-wrap items-center gap-3 text-sm text-gray-600 mb-2">
+          {formatAuthor(story.author) && (
+            <span className="font-medium">
+              {formatAuthor(story.author)}
+            </span>
+          )}
+          {formatDate(story.date) && (
+            <span className="text-gray-500">
+              {formatDate(story.date)}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Social Media Abstract */}
       <div className="mb-4 flex-1">
-        <p className="text-gray-700 text-sm leading-relaxed line-clamp-4">
+        <p className="text-gray-700 text-sm leading-relaxed line-clamp-3">
           {story.social_abstract.replace(/^"|"$/g, '')}
         </p>
       </div>
 
-      {/* Classification Info */}
-      <div className="space-y-2 text-xs">
+      {/* Classification Info - Reduced size by 20% */}
+      <div className="space-y-1.5 text-xs">
         {/* Umbrella */}
         <div className="flex items-center gap-2">
-          <Building className="h-3 w-3 text-blue-600 flex-shrink-0" />
-          <span className="text-gray-600 font-medium">Category:</span>
-          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+          <Building className="h-2.5 w-2.5 text-blue-600 flex-shrink-0" />
+          <span className="text-gray-600 font-medium text-xs">Category:</span>
+          <span className="bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded-full font-medium text-xs">
             {story.umbrella}
           </span>
         </div>
 
         {/* Geographic Area */}
         <div className="flex items-center gap-2">
-          <MapPin className="h-3 w-3 text-green-600 flex-shrink-0" />
-          <span className="text-gray-600 font-medium">Area:</span>
-          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+          <MapPin className="h-2.5 w-2.5 text-green-600 flex-shrink-0" />
+          <span className="text-gray-600 font-medium text-xs">Area:</span>
+          <span className="bg-green-100 text-green-800 px-1.5 py-0.5 rounded-full font-medium text-xs">
             {story.geographic_area}
           </span>
         </div>
 
         {/* Neighborhoods */}
-        {story.neighborhoods && (
+        {neighborhoods.length > 0 && (
           <div className="flex items-start gap-2">
-            <Home className="h-3 w-3 text-orange-600 flex-shrink-0 mt-0.5" />
-            <span className="text-gray-600 font-medium">Neighborhoods:</span>
+            <Home className="h-2.5 w-2.5 text-orange-600 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-600 font-medium text-xs">Neighborhoods:</span>
             <div className="flex-1">
-              <div className="flex flex-wrap gap-1">
-                {story.neighborhoods.split(',').slice(0, 3).map((neighborhood, index) => (
+              <div className="flex flex-wrap gap-1 items-center">
+                {visibleNeighborhoods.map((neighborhood, index) => (
                   <span
                     key={index}
-                    className="bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium"
+                    className="bg-orange-100 text-orange-800 px-1.5 py-0.5 rounded-full font-medium text-xs"
                   >
-                    {neighborhood.trim()}
+                    {neighborhood}
                   </span>
                 ))}
-                {story.neighborhoods.split(',').length > 3 && (
-                  <span className="text-gray-500 px-2 py-1">
-                    +{story.neighborhoods.split(',').length - 3} more
-                  </span>
+                {hasMoreNeighborhoods && (
+                  <button
+                    onClick={() => setShowAllNeighborhoods(!showAllNeighborhoods)}
+                    className="flex items-center gap-1 text-gray-500 hover:text-gray-700 px-1.5 py-0.5 rounded text-xs transition-colors duration-200"
+                  >
+                    {showAllNeighborhoods ? (
+                      <>
+                        <span>Less</span>
+                        <ChevronUp className="h-3 w-3" />
+                      </>
+                    ) : (
+                      <>
+                        <span>+{neighborhoods.length - 2} more</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </>
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -79,7 +119,7 @@ const StoryCard = ({ story }) => {
       </div>
 
       {/* Read Full Story Button */}
-      <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="mt-4 pt-3 border-t border-gray-100">
         <a
           href={story.url}
           target="_blank"
